@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Secreto 💀</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            background-color: #0b0c10 !important;
+            color: #c5c6c7 !important;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+        }
+        .cyber-bg-card {
+            background-color: #12141a !important;
+            border-color: #1e2330 !important;
+        }
+        .cyber-bg-input {
+            background-color: #0b0c10 !important;
+            border-color: #232838 !important;
+            color: #ffffff !important;
+        }
+        .cyber-bg-input:focus {
+            border-color: #dc2626 !important;
+            outline: none;
+        }
+        .cyber-glow {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+        }
+        .cyber-glow-btn:hover {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+        .cyber-border {
+            border-color: #1e2330 !important;
+        }
+        .cyber-text-muted {
+            color: #535b6c !important;
+        }
+        .cyber-text-accent {
+            color: #838996 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4">
+
+    <div class="w-full max-w-md space-y-6 pb-20">
+        <!-- Header Profil (Foto ghafiq.jpg) - Klik 3x di sini untuk memanggil terminal admin -->
+        <div class="text-center space-y-3">
+            <div id="adminTrigger" class="w-20 h-20 bg-[#1f2833] border border-red-600/50 rounded-2xl mx-auto overflow-hidden shadow-lg cyber-glow transform rotate-3 flex items-center justify-center cursor-pointer active:scale-95 transition" title="Tap 3x">
+                <img src="ghafiq.jpg" alt="Profil Ghafiq" class="w-full h-full object-cover pointer-events-none" onerror="this.onerror=null; this.src='https://via.placeholder.com/150/12141a/dc2626?text=GHAFIQ';">
+            </div>
+            <h1 class="text-2xl font-black tracking-wider text-white uppercase">CYBER <span class="text-red-500">SECRETO</span></h1>
+            <p class="text-xs cyber-text-accent">Kirim pesan terenkripsi secara anonim. Identitasmu aman di bayangan.</p>
+        </div>
+
+        <!-- Form Kirim Pesan (Publik) -->
+        <div class="cyber-bg-card p-5 rounded-2xl border shadow-2xl cyber-glow">
+            <form id="messageForm" class="space-y-4">
+                <textarea id="messageInput" rows="4" placeholder="Tulis pesan rahasiamu di sini..." required
+                    class="w-full p-3 cyber-bg-input border rounded-xl text-sm resize-none placeholder:text-[#535b6c] transition"></textarea>
+                <button type="submit" id="submitBtn" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold tracking-wide py-3 rounded-xl transition duration-200 text-sm cyber-glow-btn cursor-pointer">
+                    KIRIM PESAN ⚡
+                </button>
+            </form>
+            <div id="alertBox" class="mt-3 hidden text-center text-xs py-2 px-3 rounded-lg"></div>
+        </div>
+
+        <!-- Panel Login Admin (Sembunyian / Tersembunyi Total dari Publik) -->
+        <div id="adminLoginSection" class="cyber-bg-card p-4 rounded-xl border cyber-border space-y-3 hidden">
+            <div class="flex justify-between items-center">
+                <div class="text-xs font-bold text-red-500 uppercase tracking-widest">>> SECURE TERMINAL</div>
+                <button onclick="hideAdminLogin()" class="text-xs cyber-text-muted hover:text-white">✕</button>
+            </div>
+            <form id="loginForm" class="flex gap-2">
+                <input type="password" id="pinInput" placeholder="Masukkan PIN Admin" required
+                    class="w-full p-2 cyber-bg-input border rounded-lg text-xs text-white placeholder:text-[#535b6c]">
+                <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-lg text-xs cyber-glow-btn cursor-pointer">
+                    MASUK
+                </button>
+            </form>
+            <div id="loginError" class="text-[10px] text-red-500 hidden">PIN Salah!</div>
+        </div>
+
+        <!-- Tombol Logout Admin (Muncul Kalau Sudah Login) -->
+        <div id="adminControlSection" class="cyber-bg-card p-3 rounded-xl border cyber-border flex justify-between items-center hidden">
+            <span class="text-xs text-red-500 font-mono">STATUS: ADMIN MODE ON 🛠️</span>
+            <button onclick="logoutAdmin()" class="text-[10px] bg-red-950/40 hover:bg-red-900 text-red-400 px-3 py-1.5 rounded-lg border border-red-900 transition cursor-pointer">
+                KELUAR ADMIN
+            </button>
+        </div>
+
+        <!-- Daftar Pesan -->
+        <div class="space-y-4">
+            <div class="flex justify-between items-center border-b cyber-border pb-2">
+                <h2 id="sectionTitle" class="text-xs font-bold text-red-500 uppercase tracking-widest">>> BROADCAST.LOG</h2>
+                <span id="msgCount" class="text-[10px] cyber-bg-card border cyber-border cyber-text-accent px-2.5 py-0.5 rounded-md">0 Terdeteksi</span>
+            </div>
+            
+            <div id="messagesContainer" class="space-y-3">
+                <p class="cyber-text-muted text-center text-sm py-6 animate-pulse">Memuat sinyal...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PIN = '654312'; 
+        let isAdmin = localStorage.getItem('isLoggedIn') === 'true';
+
+        // Logika Rahasia: Klik 3 kali cepat pada foto profil untuk memunculkan form login admin
+        let clickCount = 0;
+        let clickTimer = null;
+        document.getElementById('adminTrigger').addEventListener('click', () => {
+            clickCount++;
+            if (clickCount === 3) {
+                if (!isAdmin) {
+                    document.getElementById('adminLoginSection').classList.remove('hidden');
+                }
+                clickCount = 0;
+                clearTimeout(clickTimer);
+            } else {
+                clearTimeout(clickTimer);
+                clickTimer = setTimeout(() => { clickCount = 0; }, 600);
+            }
+        });
+
+        function hideAdminLogin() {
+            document.getElementById('adminLoginSection').classList.add('hidden');
+        }
+
+        function getStoredMessages() {
+            const data = localStorage.getItem('cyber_secreto_msgs');
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveStoredMessages(messages) {
+            localStorage.setItem('cyber_secreto_msgs', JSON.stringify(messages));
+        }
+
+        function checkAdminState() {
+            if (isAdmin) {
+                document.getElementById('adminLoginSection').classList.add('hidden');
+                document.getElementById('adminControlSection').classList.remove('hidden');
+                document.getElementById('sectionTitle').textContent = '>> BROADCAST.LOG (ADMIN MODE)';
+            } else {
+                document.getElementById('adminLoginSection').classList.add('hidden');
+                document.getElementById('adminControlSection').classList.add('hidden');
+                document.getElementById('sectionTitle').textContent = '>> BROADCAST.LOG';
+            }
+            loadData();
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value;
+            const errBox = document.getElementById('loginError');
+
+            if (pin === ADMIN_PIN) {
+                localStorage.setItem('isLoggedIn', 'true');
+                isAdmin = true;
+                errBox.classList.add('hidden');
+                document.getElementById('pinInput').value = '';
+                checkAdminState();
+            } else {
+                errBox.classList.remove('hidden');
+            }
+        });
+
+        function logoutAdmin() {
+            localStorage.removeItem('isLoggedIn');
+            isAdmin = false;
+            checkAdminState();
+        }
+
+        function loadData() {
+            const container = document.getElementById('messagesContainer');
+            const messages = getStoredMessages();
+            container.innerHTML = '';
+
+            if (messages.length === 0) {
+                container.innerHTML = '<p class="cyber-text-muted text-center text-sm py-6">Belum ada sinyal pesan masuk.</p>';
+                document.getElementById('msgCount').textContent = '0 Terdeteksi';
+                return;
+            }
+
+            document.getElementById('msgCount').textContent = `${messages.length} Terdeteksi`;
+
+            messages.forEach(msg => {
+                if (isAdmin) {
+                    let replySection = `
+                        <div class="space-y-2 pt-2 border-t cyber-border mt-3">
+                            <textarea id="reply-input-${msg.id}" rows="2" placeholder="Tulis balasan..." 
+                                class="w-full p-2.5 cyber-bg-input border rounded-xl text-xs text-white resize-none placeholder:text-[#535b6c]">${msg.reply || ''}</textarea>
+                            <div class="flex justify-between items-center pt-1">
+                                <button onclick="sendReply(${msg.id})" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cyber-glow-btn cursor-pointer">
+                                    ${msg.reply ? 'UPDATE BALASAN' : 'KIRIM BALASAN'}
+                                </button>
+                                <button onclick="deleteMessage(${msg.id})" class="text-red-500/70 hover:text-red-400 text-xs px-2 py-1 transition font-mono cursor-pointer">
+                                    [ HAPUS ]
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    let adminReplyDisplay = '';
+                    if (msg.reply && msg.reply.trim() !== '') {
+                        adminReplyDisplay = `
+                            <div class="mt-3 bg-red-950/20 border-l-2 border-red-600 p-3 rounded-r-xl text-sm space-y-1">
+                                <span class="text-red-500 text-xs font-bold">>> BALASAN GHAFIQ:</span>
+                                <p class="text-white text-xs pl-2">${msg.reply}</p>
+                            </div>
+                        `;
+                    }
+
+                    container.innerHTML += `
+                        <div class="cyber-bg-card p-4 rounded-xl border cyber-border space-y-2 shadow-md" id="msg-card-${msg.id}">
+                            <span class="text-[10px] cyber-text-muted block font-mono">[${msg.date || 'Unknown'}]</span>
+                            <p class="text-white text-sm whitespace-pre-wrap font-medium">${msg.text}</p>
+                            ${adminReplyDisplay}
+                            ${replySection}
+                        </div>
+                    `;
+                } else {
+                    let replySection = '';
+                    if (msg.reply && msg.reply.trim() !== '') {
+                        replySection = `
+                            <div class="mt-3 bg-red-950/20 border-l-2 border-red-600 p-3 rounded-r-xl text-sm space-y-1">
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="text-red-500 text-xs font-bold">>> BALASAN GHAFIQ:</span>
+                                </div>
+                                <p class="text-white text-xs sm:text-sm pl-2">${msg.reply}</p>
+                            </div>
+                        `;
+                    }
+
+                    container.innerHTML += `
+                        <div class="cyber-bg-card p-4 rounded-xl border cyber-border space-y-2 shadow-md">
+                            <p class="text-white text-sm whitespace-pre-wrap">${msg.text}</p>
+                            <span class="text-[10px] cyber-text-muted block font-mono">[${msg.date || 'Unknown'}]</span>
+                            ${replySection}
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        document.getElementById('messageForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const alertBox = document.getElementById('alertBox');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            let messages = getStoredMessages();
+            const options = { dateStyle: 'medium', timeStyle: 'short' };
+            const now = new Date().toLocaleString('id-ID', options);
+
+            const newMessage = {
+                id: Date.now(),
+                text: text,
+                reply: "",
+                date: now
+            };
+
+            messages.unshift(newMessage);
+            saveStoredMessages(messages);
+
+            input.value = '';
+            alertBox.textContent = 'Pesan berhasil terkirim ke sistem! ⚡';
+            alertBox.className = 'mt-3 text-center text-xs py-2 px-3 rounded-lg bg-red-950/40 border border-red-800 text-red-400 block';
+            
+            loadData();
+            setTimeout(() => alertBox.classList.add('hidden'), 4000);
+        });
+
+        function sendReply(id) {
+            const replyText = document.getElementById(`reply-input-${id}`).value;
+            let messages = getStoredMessages();
+
+            messages = messages.map(msg => {
+                if (msg.id === id) msg.reply = replyText;
+                return msg;
+            });
+
+            saveStoredMessages(messages);
+            alert('Balasan berhasil disimpan!');
+            loadData();
+        }
+
+        function deleteMessage(id) {
+            if (!confirm('Hapus pesan ini?')) return;
+            let messages = getStoredMessages();
+            messages = messages.filter(msg => msg.id !== id);
+            saveStoredMessages(messages);
+            loadData();
+        }
+
+        checkAdminState();
+    </script>
+</body>
+</html>
